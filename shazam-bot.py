@@ -28,7 +28,11 @@ apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 @bot.message_handler(commands=['start','hello'])
 def start_command_bot(message):
     print(message.chat.type)
-    text = f'Hi {message.from_user.first_name}, I am Shazam, I am here to serve you. Please Type /help to look on the options'
+    if message.from_user.username == 'KamaliStr':
+        text = f'Hi {message.from_user.first_name}, I am Shazam, Dinesh made me only for you... and he misses you so much... Please Type or click 👉 /help to look on the options'
+    else:
+        text = f'Hi {message.from_user.first_name}, I am Shazam, I am here to serve you. Please Type /help to look on the options'
+
     bot.reply_to(message, text)
 
 
@@ -144,11 +148,11 @@ def google_translate_text(message, text_to_translate):
     transtated_text = translated_response['data']['translations'][0]['translatedText']
 
     if transtated_text:
-        text = f'Given Text: *{text_to_translate}* \n Translated Text: *{transtated_text}*'
+        text = f"Given Text: '{text_to_translate}' \n Translated Text: '{transtated_text}'"
         bot.send_message(message.chat.id,text)
         bot.send_message(message.chat.id, f"Click 👉 */help* to go to the menu or Click 👉 */translator* to check again",parse_mode='Markdown')
     else:
-        text = f'Given Text: *{text_to_translate}* \n *Failed* to translate'
+        text = f'Given Text: "{text_to_translate}" \n *Failed* to translate'
         bot.send_message(message.chat.id,text)
         bot.send_message(message.chat.id, f"Click 👉 */help* to go to the menu or Click 👉 */translator* to check again",parse_mode='Markdown')
 
