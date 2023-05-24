@@ -5,7 +5,9 @@ from telebot import apihelper
 import os
 from dotenv import load_dotenv # python-dotenv
 import utils
+import wifi_qrcode_generator
 import re
+from io import BytesIO
 
 log.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -39,16 +41,16 @@ def start_command_bot(message):
 @bot.message_handler(commands=['help'])
 def help_command_bot(message):
     text = '''
-        Type the option you prefer
-        /horoscope ==> To check on your horoscope. 
-        /password ==> To check the given password has been breached or not.
-        /website ==> To check is the given domain has been hacked or not.
-        /translator ==> Given Sentence will be translated to the specified language.
-        /meaning ==> Will list the definition of the given word.
-        /start ==> shazam will welcome you again. 
-        /help ==> will list the above menu.
+        Click the option you prefer
+        👉 */horoscope* ==> To check on your horoscope. 
+        👉 */password* ==> To check the given password has been breached or not.
+        👉 */website* ==> To check is the given domain has been hacked or not.
+        👉 */translator* ==> Given Sentence will be translated to the specified language.
+        👉 */qrcode* ==> Will generate QR for your wifi connectivity, later can be scanned and connected to your wifi.
+        👉 */start* ==> shazam will welcome you again. 
+        👉 */help* ==> will list the above menu.
     '''
-    bot.send_message(message.chat.id, text)
+    bot.send_message(message.chat.id, text,parse_mode='Markdown')
 
 #* HOROSCOPE 
 # this function ask the question which sign needed from the list
@@ -122,7 +124,7 @@ def get_password_breach_count(message):
 @bot.message_handler(commands=['translator'])
 def translator_command_bot(message):
     text = 'Enter the Text you want to translate'
-    msg = bot.send_message(message.chat.id,text)
+    msg = bot.send_message(message.chat.id,text,parse_mode='Markdown')
     bot.register_next_step_handler(msg,pick_language)
 
 def pick_language(message):
@@ -135,7 +137,7 @@ def pick_language(message):
         * Type *de* for German
         * Type *pt* for portuguese 
     '''
-    msg = bot.send_message(message.chat.id,text)
+    msg = bot.send_message(message.chat.id,text,parse_mode='Markdown')
     bot.register_next_step_handler(msg,google_translate_text,text_to_translate)
 
 def google_translate_text(message, text_to_translate):
@@ -149,17 +151,44 @@ def google_translate_text(message, text_to_translate):
 
     if transtated_text:
         text = f"Given Text: '{text_to_translate}' \n Translated Text: '{transtated_text}'"
-        bot.send_message(message.chat.id,text)
+        bot.send_message(message.chat.id,text,parse_mode='Markdown')
         bot.send_message(message.chat.id, f"Click 👉 */help* to go to the menu or Click 👉 */translator* to check again",parse_mode='Markdown')
     else:
         text = f'Given Text: "{text_to_translate}" \n *Failed* to translate'
-        bot.send_message(message.chat.id,text)
+        bot.send_message(message.chat.id,text,parse_mode='Markdown')
         bot.send_message(message.chat.id, f"Click 👉 */help* to go to the menu or Click 👉 */translator* to check again",parse_mode='Markdown')
+
+#* Generate qr code for wifi 
+@bot.message_handler(commands=['qrcode'])
+def wifi_qr_command_bot(message):
+    text='Type your wifi name'
+    msg = bot.send_message(message.chat.id,text,parse_mode='Markdown')
+    bot.register_next_step_handler(msg,get_password_qrcode)
+
+def get_password_qrcode(message):
+    wifi_name = message.text
+    text = f'Enter your *{wifi_name}* wifi password'
+    msg = bot.send_message(message.chat.id,text,parse_mode='Markdown')
+    bot.register_next_step_handler(msg,generate_wifi_qrcode,wifi_name)
+
+def generate_wifi_qrcode(message,wifi_name):
+    wifi_password = message.text
+    qr_code_img = wifi_qrcode_generator.generator.wifi_qrcode(
+        ssid={wifi_name}, hidden=False, authentication_type='WPA', password=wifi_password
+    )
+    image_bytes = BytesIO()
+    qr_code_img.make_image().save(image_bytes, format='PNG')
+    image_bytes.seek(0)
+    # img.save()
+    bot.send_photo(message.chat.id,photo=image_bytes)
+
+
 
 @bot.message_handler(func=lambda msg : True)
 def echo_all_msg(message):
     text = f'sorry {message.from_user.first_name}, I am not programmed for this command yet, Click 👉 */help* to go to the menu'
-    bot.reply_to(message, text)
+    bot.send_message(message.chat.id, text, parse_mode='Markdown')
 
-log.info('Bot is in pooling mode')
-bot.infinity_polling()
+if __name__ == '__main__':
+    log.info('Bot is in pooling mode')
+    bot.infinity_polling()

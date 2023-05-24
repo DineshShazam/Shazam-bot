@@ -90,6 +90,7 @@ def password_breach_count(response, hashed_string: str) -> int:
            return count
     return 0
 
+#* google translator
 @exception_handling
 def get_google_translate(text_to_translate, lang_code_to_translate):
     api_url = get_url_by_type('public_api','translator_url')
